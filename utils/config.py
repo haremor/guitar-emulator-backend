@@ -15,4 +15,3 @@ class Settings(BaseSettings):
 
 print(f"Loading environment variables from: {Settings.Config.env_file}")
 settings = Settings()
-print(f"Loaded db_url: {settings.db_url}")

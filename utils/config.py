@@ -1,26 +1,18 @@
 from pydantic_settings import BaseSettings
 from pathlib import Path
 
-
 class Settings(BaseSettings):
-    # database related
-    db_host: str
-    db_port: int
-    db_name: str
-    db_pwd: str
-    db_usr: str
-    
-    # JWT Token Related
+    db_url: str
+
     secret_key: str
-    refresh_secret_key : str
+    refresh_secret_key: str
     algorithm: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
+    REFRESH_TOKEN_EXPIRE_MINUTES: int
 
-    ACCESS_TOKEN_EXPIRE_MINUTES : int
-    REFRESH_TOKEN_EXPIRE_MINUTES : int
-    
     class Config:
-        env_file = Path(Path(__file__).resolve().parent) / ".env"
-        print(f'environment created - {Path(Path(__file__).resolve().name)}')
+        env_file = Path(Path(__file__).resolve().parent.parent) / ".env"
 
-
+print(f"Loading environment variables from: {Settings.Config.env_file}")
 settings = Settings()
+print(f"Loaded db_url: {settings.db_url}")

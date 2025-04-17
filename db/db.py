@@ -1,17 +1,26 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from db.models import Base
+from db.models import MainBase, FileBase
 from utils.config import settings
 
-engine = create_engine(f'postgresql+psycopg://{settings.db_url}')
+main_engine = create_engine(f'postgresql+psycopg://{settings.main_db_url}')
+file_db_engine = create_engine(f'postgresql+psycopg://{settings.file_db_url}')
 
-# Create a session factory
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=main_engine)
+FileSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=file_db_engine)
 
-Base.metadata.create_all(bind=engine)
+MainBase.metadata.create_all(bind=main_engine)
+FileBase.metadata.create_all(bind=file_db_engine)
 
-async def get_db():
+async def get_main_db():
     db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+async def get_file_db():
+    db = FileSessionLocal()
     try:
         yield db
     finally:

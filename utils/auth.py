@@ -45,6 +45,7 @@ class JWTBearer(HTTPBearer):
             raise HTTPException(status_code=403, detail="Not authenticated")
 
         payload = decodeJWT(token)
+
         if not payload:
             raise HTTPException(status_code=403, detail="Invalid or expired token")
 

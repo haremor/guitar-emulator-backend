@@ -2,7 +2,8 @@ from pydantic_settings import BaseSettings
 from pathlib import Path
 
 class Settings(BaseSettings):
-    db_url: str
+    main_db_url: str
+    file_db_url: str
 
     secret_key: str
     refresh_secret_key: str

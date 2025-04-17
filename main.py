@@ -19,7 +19,7 @@ async def scheduler():
             await call_api()
         except Exception as e:
             print(f"An unexpected error occurred in the scheduler: {e}")
-        await asyncio.sleep(3)
+        await asyncio.sleep(600)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

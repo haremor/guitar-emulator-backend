@@ -1,1 +1,1 @@
-# GEB (Guitar Emulation Backend)
+# GEB (Guitar Emulator Backend)

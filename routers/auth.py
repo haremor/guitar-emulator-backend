@@ -10,7 +10,7 @@ from uuid import uuid4
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register")
-def register_user(data: PostUser, db: Session = Depends(get_db), response: Response = None):
+async def register_user(data: PostUser, db: Session = Depends(get_db), response: Response = None):
     existing_user = db.query(User).filter(User.email == data.email).first()
     if existing_user:
         raise HTTPException(
@@ -44,7 +44,7 @@ def register_user(data: PostUser, db: Session = Depends(get_db), response: Respo
     return {"access_token": access_token, "detail": "User registered successfully"}
 
 @router.post("/login")
-def login(data: LoginUser, db: Session = Depends(get_db), response: Response = None):
+async def login(data: LoginUser, db: Session = Depends(get_db), response: Response = None):
     user = db.query(User).filter(User.email == data.email).first()
     if not user or not verify_pwd(data.password, user.password):
         raise HTTPException(
@@ -66,7 +66,7 @@ def login(data: LoginUser, db: Session = Depends(get_db), response: Response = N
     return {"access_token": access_token, "detail": "Login successful"}
 
 @router.post("/refresh-token")
-def refresh_access_token(refresh_token: str, db: Session = Depends(get_db), response: Response = None):
+async def refresh_access_token(refresh_token: str, db: Session = Depends(get_db), response: Response = None):
     payload = decodeJWT(refresh_token)
     if not payload:
         raise HTTPException(
@@ -93,7 +93,7 @@ def refresh_access_token(refresh_token: str, db: Session = Depends(get_db), resp
     return {"access_token": new_access_token, "detail": "Access token refreshed successfully"}
 
 @router.get("/user", dependencies=[Depends(JWTBearer())])
-def get_user_data(db: Session = Depends(get_db), token: str = Depends(JWTBearer())):
+async def get_user_data(db: Session = Depends(get_db), token: str = Depends(JWTBearer())):
     payload = decodeJWT(token)
     if not payload:
         raise HTTPException(
@@ -122,7 +122,7 @@ def get_user_data(db: Session = Depends(get_db), token: str = Depends(JWTBearer(
     }
 
 @router.delete("/delete-user", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(JWTBearer(allowed_roles=["developer"]))])
-def delete_user(email: str, db: Session = Depends(get_db)):
+async def delete_user(email: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(

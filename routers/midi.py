@@ -12,7 +12,7 @@ from schemas import MidiRequest
 router = APIRouter(prefix="/midi", tags=["MIDIHandling"])
 
 @router.post("/generate-midi", dependencies=[Depends(JWTBearer())])
-def generate_midi(midi_data: MidiRequest, db: Session = Depends(get_db)):
+async def generate_midi(midi_data: MidiRequest, db: Session = Depends(get_db)):
     midi = pretty_midi.PrettyMIDI()
     
     # Convert instrument name to program number
@@ -48,7 +48,7 @@ def generate_midi(midi_data: MidiRequest, db: Session = Depends(get_db)):
     return {"detail": "MIDI file generated and saved successfully", "file_name": midi_data.name}
 
 @router.get("/get/{file_name}")
-def get_midi_file_by_name(file_name: str, db: Session = Depends(get_db)):
+async def get_midi_file_by_name(file_name: str, db: Session = Depends(get_db)):
     midi_file = db.query(MidiFile).filter(MidiFile.file_name == file_name).first()
     if not midi_file:
         raise HTTPException(status_code=404, detail="MIDI file not found")

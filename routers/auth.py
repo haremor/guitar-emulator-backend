@@ -2,9 +2,9 @@ from schemas import PostUser, LoginUser
 from utils.password import secure_pwd, verify_pwd
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from db.db import get_main_db
+from db.db import get_file_db, get_main_db
 from utils.auth import create_access_token, create_refresh_token, JWTBearer, decodeJWT
-from db.models import User
+from db.models import User, MidiMetadata, MidiFile
 from uuid import uuid4
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -121,15 +121,25 @@ async def get_user_data(db: Session = Depends(get_main_db), token: str = Depends
         "email": user.email
     }
 
-@router.delete("/delete-user", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(JWTBearer(allowed_roles=["developer"]))])
-async def delete_user(email: str, db: Session = Depends(get_main_db)):
-    user = db.query(User).filter(User.email == email).first()
+@router.delete("/delete-user/{user_id}")
+async def delete_user_and_files(user_id: str, db: Session = Depends(get_main_db), file_db: Session = Depends(get_file_db)):
+    # Find the user in the main database
+    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User with this email does not exist"
-        )
-    
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Find all metadata entries for the user
+    midi_metadata = db.query(MidiMetadata).filter(MidiMetadata.user_id == user_id).all()
+
+    # Delete the associated files from the file database
+    for metadata in midi_metadata:
+        file = file_db.query(MidiFile).filter(MidiFile.id == metadata.file_id).first()
+        if file:
+            file_db.delete(file)
+            file_db.commit()
+
+    # Delete the user (this will also delete metadata due to cascade)
     db.delete(user)
     db.commit()
-    return {"detail": "User deleted successfully"}
+
+    return {"detail": "User and their MIDI files deleted successfully"}

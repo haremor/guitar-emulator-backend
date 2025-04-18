@@ -9,7 +9,8 @@ app.include_router(auth.router)
 app.include_router(midi.router)
 
 allowed_origins = [
-	'http://localhost:3000'
+	'http://localhost:3000',
+    'https://geb-front.onrender.com/'
 ]
 
 app.add_middleware(

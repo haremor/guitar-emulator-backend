@@ -38,7 +38,7 @@ async def register_user(data: PostUser, db: Session = Depends(get_main_db), resp
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="Strict"
+        samesite="None"
     )
 
     return {"access_token": access_token, "detail": "User registered successfully"}
@@ -60,7 +60,7 @@ async def login(data: LoginUser, db: Session = Depends(get_main_db), response: R
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="Strict"
+        samesite="None"
     )
 
     return {"access_token": access_token, "detail": "Login successful"}

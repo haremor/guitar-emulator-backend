@@ -14,7 +14,6 @@ class LoginUser(BaseModel):
         orm_mode = True
         use_enum_values = True
 
-
 class PostUser(BaseModel):
     email: EmailStr
     username: Optional[str]
@@ -36,15 +35,6 @@ class MidiRequest(BaseModel):
     instrument_name: str
     notes: List[NoteEvent]
 
-
-# class UserResponse(BaseModel):
-#     id: UUID
-#     username: str
-#     email: EmailStr
-
-#     class Config:
-#         orm_mode = True
-
-# class LoginResponse(BaseModel):
-#     access_token: str
-#     refresh_token: str
+class UpdateMidiRequest(BaseModel):
+    file_name: Optional[str] = None
+    file_data: Optional[bytes] = None

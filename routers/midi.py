@@ -5,11 +5,17 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from db.db import get_main_db, get_file_db
 from sqlalchemy.orm import Session
-from db.models import MidiFile, MidiMetadata, User
+from db.models import MidiFile, MidiMetadata, User, UserRole
 from utils.auth import JWTBearer, decodeJWT
-from schemas import MidiRequest
+from schemas import MidiRequest, UpdateMidiRequest
 
 router = APIRouter(prefix="/midi", tags=["MIDIHandling"])
+
+def validate_uuid(file_id: str):
+    try:
+        uuid.UUID(file_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid file_id format")
 
 async def get_current_user_id(token: str = Depends(JWTBearer()), db: Session = Depends(get_main_db)):
     payload = decodeJWT(token)
@@ -25,7 +31,7 @@ async def get_current_user_id(token: str = Depends(JWTBearer()), db: Session = D
 
     return user.id
 
-@router.post("/generate-midi", dependencies=[Depends(JWTBearer())])
+@router.post("/generate", dependencies=[Depends(JWTBearer())])
 async def generate_midi(
     midi_data: MidiRequest,
     db: Session = Depends(get_main_db),
@@ -81,6 +87,8 @@ async def get_midi_file_by_name(
     db: Session = Depends(get_main_db),
     file_db: Session = Depends(get_file_db)
 ):
+    validate_uuid(file_id)
+    
     # Get the metadata from the main database
     metadata = db.query(MidiMetadata).filter(MidiMetadata.file_id == file_id).first()
     if not metadata:
@@ -144,3 +152,79 @@ async def get_user_midi_files(
     ]
 
     return {"midi_files": response}
+
+@router.delete("/delete/{file_id}", dependencies=[Depends(JWTBearer())])
+async def delete_midi_file(
+    file_id: str,
+    db: Session = Depends(get_main_db),
+    file_db: Session = Depends(get_file_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    validate_uuid(file_id)
+
+    metadata = db.query(MidiMetadata).filter(MidiMetadata.file_id == file_id).first()
+    if not metadata:
+        raise HTTPException(status_code=404, detail="MIDI metadata not found")
+
+    # Get the user who owns the file
+    owner_id = metadata.user_id
+
+    # Get the current user's role
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the user is the owner or an admin
+    if user_id != owner_id and user.role != UserRole.developer:
+        raise HTTPException(status_code=403, detail="You do not have permission to delete this file")
+
+    midi_file = file_db.query(MidiFile).filter(MidiFile.id == file_id).first()
+    if not midi_file:
+        raise HTTPException(status_code=404, detail="MIDI file not found in file database")
+
+    file_db.delete(midi_file)
+    file_db.commit()
+
+    db.delete(metadata)
+    db.commit()
+
+    return {"detail": "MIDI file and metadata deleted successfully"}
+
+@router.patch("/update/{file_id}", dependencies=[Depends(JWTBearer())])
+async def update_midi_file(
+    file_id: str,
+    update_data: UpdateMidiRequest,
+    db: Session = Depends(get_main_db),
+    file_db: Session = Depends(get_file_db),
+    user_id: str = Depends(get_current_user_id)
+):
+    validate_uuid(file_id)
+
+    metadata = db.query(MidiMetadata).filter(MidiMetadata.file_id == file_id).first()
+    if not metadata:
+        raise HTTPException(status_code=404, detail="MIDI metadata not found")
+
+    owner_id = metadata.user_id
+
+    # Ensure the current user is the owner
+    if user_id != owner_id:
+        raise HTTPException(status_code=403, detail="You do not have permission to update this file")
+
+    # Get the file from the file database
+    midi_file = file_db.query(MidiFile).filter(MidiFile.id == file_id).first()
+    if not midi_file:
+        raise HTTPException(status_code=404, detail="MIDI file not found in file database")
+
+    # Update the file_name if provided
+    if update_data.file_name:
+        midi_file.file_name = update_data.file_name
+        metadata.file_name = update_data.file_name  # Propagate the change to the metadata
+
+    # Update the file_data if provided
+    if update_data.file_data:
+        midi_file.file_data = update_data.file_data
+
+    file_db.commit()
+    db.commit()
+
+    return {"detail": "MIDI file and metadata updated successfully"}

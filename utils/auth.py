@@ -40,10 +40,12 @@ class JWTBearer(HTTPBearer):
         self.allowed_roles = allowed_roles
 
     async def __call__(self, request: Request) -> Optional[str]:
-        token = request.cookies.get("access_token")
-        if not token:
+        auth_header = request.headers.get("Authorization")
+
+        if not auth_header or not auth_header.startswith("Bearer "):
             raise HTTPException(status_code=403, detail="Not authenticated")
 
+        token = auth_header.split(' ')[1]  # Extract the token after "Bearer"
         payload = decodeJWT(token)
 
         if not payload:

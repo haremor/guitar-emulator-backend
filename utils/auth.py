@@ -49,7 +49,7 @@ class JWTBearer(HTTPBearer):
         payload = decodeJWT(token)
 
         if not payload:
-            raise HTTPException(status_code=403, detail="Invalid or expired token")
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
 
         # Check if the user's role is allowed
         user_role = payload.get("role")

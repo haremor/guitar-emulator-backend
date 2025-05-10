@@ -70,21 +70,21 @@ async def refresh_access_token(db: Session = Depends(get_main_db), response: Res
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Refresh token not found"
         )
     
     payload = decodeJWT(refresh_token)
     if not payload:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid or expired refresh token"
         )
     
     user_email = payload.get("sub")
     if not user_email:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid token payload"
         )
     

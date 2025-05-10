@@ -1,6 +1,6 @@
 from schemas import PostUser, LoginUser
 from utils.password import secure_pwd, verify_pwd
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Response
 from sqlalchemy.orm import Session
 from db.db import get_file_db, get_main_db
 from utils.auth import create_access_token, create_refresh_token, JWTBearer, decodeJWT
@@ -66,7 +66,14 @@ async def login(data: LoginUser, db: Session = Depends(get_main_db), response: R
     return {"access_token": access_token, "detail": "Login successful"}
 
 @router.post("/refresh-token")
-async def refresh_access_token(refresh_token: str, db: Session = Depends(get_main_db), response: Response = None):
+async def refresh_access_token(db: Session = Depends(get_main_db), response: Response = None, request: Request = None):
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token not found"
+        )
+    
     payload = decodeJWT(refresh_token)
     if not payload:
         raise HTTPException(

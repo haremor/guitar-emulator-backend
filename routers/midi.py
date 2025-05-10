@@ -82,7 +82,7 @@ async def generate_midi(
     return {"detail": "MIDI file generated and saved successfully", 'id': metadata.file_id, "file_name": midi_data.name}
 
 @router.get("/get")
-async def get_midi_file_by_name(
+async def get_midi_file_by_id(
     file_id: str,
     db: Session = Depends(get_main_db),
     file_db: Session = Depends(get_file_db)
@@ -90,7 +90,7 @@ async def get_midi_file_by_name(
     validate_uuid(file_id)
     
     # Get the metadata from the main database
-    metadata = db.query(MidiMetadata).filter(MidiMetadata.file_id == file_id).first()
+    metadata = db.query(MidiMetadata).filter(MidiMetadata.id == file_id).first()
     if not metadata:
         raise HTTPException(status_code=404, detail="MIDI file not found")
 

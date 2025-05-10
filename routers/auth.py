@@ -65,7 +65,7 @@ async def login(data: LoginUser, db: Session = Depends(get_main_db), response: R
 
     return {"access_token": access_token, "detail": "Login successful"}
 
-@router.get("/refresh-token")
+@router.post("/refresh-token")
 async def refresh_access_token(db: Session = Depends(get_main_db), response: Response = None, request: Request = None):
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
